@@ -265,7 +265,7 @@ const breadcrumbs = [
 			<Card class="border-none shadow-none py-6 border-b">
 				<CardContent class="p-0">
 					<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-						<div v-if="users.length > 0" class="space-y-1.5 text-sm">
+						<div v-if="isAdmin && users.length > 0" class="space-y-1.5 text-sm">
 							<Label for="filter-user">User</Label>
 							<Select v-model="filterUserId">
 								<SelectTrigger class="h-9">
@@ -280,7 +280,7 @@ const breadcrumbs = [
 							</Select>
 						</div>
 
-						<div class="space-y-1.5 text-sm">
+						<div v-if="isAdmin" class="space-y-1.5 text-sm">
 							<Label for="filter-team">Team</Label>
 							<Select v-model="filterTeamId">
 								<SelectTrigger class="h-9">
@@ -332,17 +332,19 @@ const breadcrumbs = [
 						<Table>
 							<TableHeader class="bg-muted">
 								<TableRow>
-									<TableHead class="text-[10px] font-bold uppercase py-3">Date/Time</TableHead>
-									<TableHead class="text-[10px] font-bold uppercase py-3">User</TableHead>
-                                    <TableHead class="text-[10px] font-bold uppercase py-3">Team</TableHead>
-									<TableHead class="text-[10px] font-bold uppercase py-3">Duration</TableHead>
-									<TableHead class="text-[10px] font-bold uppercase py-3">Purpose</TableHead>
-									<TableHead class="text-[10px] font-bold uppercase py-3 text-right">Actions</TableHead>
+									<TableHead class="py-3">Date</TableHead>
+									<TableHead class="py-3">Time</TableHead>
+									<TableHead v-if="isAdmin" class="py-3">User</TableHead>
+                                    <TableHead v-if="isAdmin" class="py-3">Team</TableHead>
+									<TableHead class="py-3">Duration</TableHead>
+									<TableHead class="py-3">Purpose</TableHead>
+									<TableHead class="py-3">Description</TableHead>
+									<TableHead class="py-3 text-right">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
 								<TableRow v-if="entries.data.length === 0">
-									<TableCell colspan="6" class="text-center py-12">
+									<TableCell :colspan="isAdmin ? 8 : 6" class="text-center py-12">
 										<div class="flex flex-col items-center justify-center text-muted-foreground">
 											<Calendar class="h-12 w-12 mb-4 opacity-10" />
 											<p class="text-lg font-medium">No time entries found</p>
@@ -355,25 +357,30 @@ const breadcrumbs = [
 									</TableCell>
 								</TableRow>
 								<TableRow v-for="entry in entries.data" :key="entry.id" class="hover:bg-muted/30 border-b last:border-0 transition-colors">
-                                    <TableCell class="py-3 text-xs">
-										<div class="font-medium text-slate-900">{{ formatDate(entry.date) }}</div>
-                                        <div class="text-[10px] text-slate-500">{{ formatTime(entry.start_time) }} - {{ formatTime(entry.end_time) }}</div>
+									<TableCell class="py-3">
+										<div class="font-medium">{{ formatDate(entry.date) }}</div>
 									</TableCell>
-									<TableCell class="py-3 text-xs font-medium text-slate-700">
+									<TableCell class="py-3">
+										<div class="font-medium">{{ formatTime(entry.start_time) }} - {{ formatTime(entry.end_time) }}</div>
+									</TableCell>
+									<TableCell v-if="isAdmin" class="py-3 font-medium">
 										{{ entry.user?.name || 'Unknown' }}
 									</TableCell>
-                                    <TableCell class="py-3 text-xs font-medium text-slate-500">
+                                    <TableCell v-if="isAdmin" class="py-3 font-medium">
 										{{ (entry as any).team?.name || 'Personal' }}
 									</TableCell>
 									<TableCell class="py-3">
-										<Badge variant="secondary" class="font-mono text-[10px] h-5 px-1.5 bg-slate-100 text-slate-700">
+										<Badge variant="secondary">
 											{{ formatDuration(entry.duration_minutes) }}
 										</Badge>
 									</TableCell>
 									<TableCell class="py-3">
-										<Badge :variant="getPurposeBadgeVariant(entry.purpose)" class="text-[10px] h-5 px-1.5">
+										<Badge :variant="getPurposeBadgeVariant(entry.purpose)">
 											{{ entry.purpose }}
 										</Badge>
+									</TableCell>
+									<TableCell class="py-3">
+										{{ entry.description || 'No description' }}
 									</TableCell>
 									<TableCell class="py-3 text-right">
 										<div class="flex items-center justify-end gap-1">

@@ -33,14 +33,25 @@ const mainNavItems = computed<NavItem[]>(() => {
             href: '/offline-time',
             icon: Clock,
         },
-        {
+    ];
+
+    if (user.value?.role === 'admin') {
+        items.push({
             title: 'Teams',
             href: '/teams',
             icon: Users,
-        }
-    ];
+        });
+        items.push({
+            title: 'Users',
+            href: '/users',
+            icon: Users,
+        });
+    }
+
     return items;
 });
+
+const team = computed(() => page.props.auth.team as any);
 
 // const footerNavItems: NavItem[] = [
 //     {
@@ -63,7 +74,24 @@ const mainNavItems = computed<NavItem[]>(() => {
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
                         <Link :href="dashboard()">
-                            <AppLogo />
+
+                            <template v-if="team">
+                              
+                                <template v-if="team?.data?.logo">
+                                    <img :src="team.data.logo" :alt="team.data.name" class="h-8 w-8 rounded-lg object-cover" />
+                                </template>
+                                <template v-else>
+                                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                                        <Users class="h-4 w-4" />
+                                    </div>
+                                </template>
+                                <div class="grid flex-1 text-left text-sm leading-tight">
+                                    <span class="truncate font-semibold">{{ team.data.name }}</span>
+                                </div>
+                            </template>
+                            <template v-else>
+                                <AppLogo />
+                            </template>
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>

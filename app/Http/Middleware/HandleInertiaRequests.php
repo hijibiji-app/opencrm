@@ -44,6 +44,11 @@ class HandleInertiaRequests extends Middleware
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
                 'user' => $request->user(),
+                'team' => function () use ($request) {
+                    if (!$request->user()) return null;
+                    $team = $request->user()->ownedTeams()->first() ?? $request->user()->teams()->first();
+                    return $team ? new \App\Http\Resources\TeamResource($team) : null;
+                },
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

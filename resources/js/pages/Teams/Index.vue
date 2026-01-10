@@ -100,7 +100,7 @@ const breadcrumbs = [
 				<div class="flex gap-2 mt-4 md:mt-0">
 					<Link href="/teams/create">
 						<Button>
-							<Plus class="h-4 w-4 mr-2" />
+							<Plus class="h-4 w-4" />
 							Create Team
 						</Button>
 					</Link>
@@ -115,11 +115,11 @@ const breadcrumbs = [
 			</Alert>
 
 			<!-- Teams Table -->
-			<Card class="overflow-hidden">
+			<Card class="overflow-hidden p-0">
 				<CardContent class="p-0">
 					<div class="overflow-x-auto">
 						<Table>
-							<TableHeader class="bg-muted/50">
+							<TableHeader class="bg-muted">
 								<TableRow>
 									<TableHead class="w-[300px]">Team</TableHead>
 									<TableHead>Owner</TableHead>

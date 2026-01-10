@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +36,9 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+const user = computed(() => usePage().props.auth.user);
+const authTeam = computed(() => usePage().props.auth.team as any);
 
 const form = useForm({
 	team_id: props.entry.team_id?.toString() || 'none',
@@ -144,7 +147,7 @@ const breadcrumbs = [
 				<CardContent>
 					<form @submit.prevent="submit" class="space-y-6">
 						<!-- Team -->
-						<div class="space-y-2">
+						<div v-if="user?.role === 'admin'" class="space-y-2">
 							<Label for="team" class="flex items-center gap-2">
 								<Users class="h-4 w-4" />
 								Team (Optional)
