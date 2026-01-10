@@ -86,8 +86,8 @@ const currentUser = computed(() => page.props.auth?.user as User & { role: strin
 const isAdmin = computed(() => currentUser.value?.role === 'admin');
 
 // Filter state
-const filterUserId = ref(props.filters.user_id?.toString() || '');
-const filterTeamId = ref(props.filters.team_id?.toString() || '');
+const filterUserId = ref(props.filters.user_id?.toString() || 'none');
+const filterTeamId = ref(props.filters.team_id?.toString() || 'none');
 const filterDateFrom = ref(props.filters.date_from || '');
 const filterDateTo = ref(props.filters.date_to || '');
 const filterMonth = ref(props.filters.month || '');
@@ -134,8 +134,8 @@ const applyFilters = () => {
 	router.get(
 		'/offline-time',
 		{
-			user_id: filterUserId.value || undefined,
-			team_id: filterTeamId.value || undefined,
+			user_id: filterUserId.value !== 'none' ? filterUserId.value : undefined,
+			team_id: filterTeamId.value !== 'none' ? filterTeamId.value : undefined,
 			date_from: filterDateFrom.value || undefined,
 			date_to: filterDateTo.value || undefined,
 			month: filterMonth.value || undefined,
@@ -148,8 +148,8 @@ const applyFilters = () => {
 };
 
 const clearFilters = () => {
-	filterUserId.value = '';
-	filterTeamId.value = '';
+	filterUserId.value = 'none';
+	filterTeamId.value = 'none';
 	filterDateFrom.value = '';
 	filterDateTo.value = '';
 	filterMonth.value = '';
@@ -272,7 +272,7 @@ const breadcrumbs = [
 									<SelectValue placeholder="All Users" />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="">All Users</SelectItem>
+									<SelectItem value="none">All Users</SelectItem>
 									<SelectItem v-for="u in users" :key="u.id" :value="u.id.toString()">
 										{{ u.name }}
 									</SelectItem>
@@ -287,7 +287,7 @@ const breadcrumbs = [
 									<SelectValue placeholder="All/Personal" />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="">All/Personal</SelectItem>
+									<SelectItem value="none">All/Personal</SelectItem>
 									<SelectItem v-for="t in teams" :key="t.id" :value="t.id.toString()">
 										{{ t.name }}
 									</SelectItem>

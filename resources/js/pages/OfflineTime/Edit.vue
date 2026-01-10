@@ -38,7 +38,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const form = useForm({
-	team_id: props.entry.team_id?.toString() || '',
+	team_id: props.entry.team_id?.toString() || 'none',
 	date: props.entry.date,
 	start_time: props.entry.start_time.substring(0, 5), 
 	end_time: props.entry.end_time.substring(0, 5),
@@ -92,7 +92,12 @@ const calculatedDuration = computed(() => {
 });
 
 const submit = () => {
-	form.put(`/offline-time/${props.entry.id}`, {
+    const submitData = { ...form.data() };
+    if (submitData.team_id === 'none') {
+        submitData.team_id = '';
+    }
+
+	router.put(`/offline-time/${props.entry.id}`, submitData, {
 		preserveScroll: true,
 	});
 };
@@ -149,7 +154,7 @@ const breadcrumbs = [
 									<SelectValue placeholder="Personal / No Team" />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="">Personal / No Team</SelectItem>
+									<SelectItem value="none">Personal / No Team</SelectItem>
 									<SelectItem v-for="team in teams" :key="team.id" :value="team.id.toString()">
 										{{ team.name }}
 									</SelectItem>

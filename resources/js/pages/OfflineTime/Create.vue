@@ -40,7 +40,7 @@ const props = defineProps<Props>();
 const isEditing = computed(() => !!props.entry);
 
 const form = useForm({
-    team_id: props.entry?.team_id?.toString() || '',
+    team_id: props.entry?.team_id?.toString() || 'none',
 	date: props.entry?.date || new Date().toISOString().split('T')[0],
 	start_time: props.entry?.start_time?.substring(0, 5) || '', 
 	end_time: props.entry?.end_time?.substring(0, 5) || '',
@@ -94,12 +94,18 @@ const calculatedDuration = computed(() => {
 });
 
 const submit = () => {
+    // Process form data before submission
+    const submitData = { ...form.data() };
+    if (submitData.team_id === 'none') {
+        submitData.team_id = '';
+    }
+
 	if (isEditing.value && props.entry) {
-		form.put(`/offline-time/${props.entry.id}`, {
+		router.put(`/offline-time/${props.entry.id}`, submitData, {
 			preserveScroll: true,
 		});
 	} else {
-		form.post('/offline-time', {
+		router.post('/offline-time', submitData, {
 			preserveScroll: true,
 		});
 	}
@@ -161,7 +167,7 @@ const breadcrumbs = [
 									<SelectValue placeholder="Personal / No Team" />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="">Personal / No Team</SelectItem>
+									<SelectItem value="none">Personal / No Team</SelectItem>
 									<SelectItem v-for="team in teams" :key="team.id" :value="team.id.toString()">
 										{{ team.name }}
 									</SelectItem>
