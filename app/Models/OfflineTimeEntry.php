@@ -12,6 +12,7 @@ class OfflineTimeEntry extends Model
 
     protected $fillable = [
         'user_id',
+        'team_id',
         'date',
         'start_time',
         'end_time',
@@ -25,6 +26,7 @@ class OfflineTimeEntry extends Model
         'start_time' => 'datetime:H:i',
         'end_time' => 'datetime:H:i',
         'duration_minutes' => 'integer',
+        'team_id' => 'integer',
     ];
 
     /**
@@ -33,6 +35,14 @@ class OfflineTimeEntry extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the team associated with the time entry.
+     */
+    public function team(): BelongsTo
+    {
+        return $this->belongsTo(Team::class);
     }
 
     /**

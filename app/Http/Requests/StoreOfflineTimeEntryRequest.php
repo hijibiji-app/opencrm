@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\OfflineTimeEntry;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Validator;
 
 class StoreOfflineTimeEntryRequest extends FormRequest
@@ -25,6 +26,7 @@ class StoreOfflineTimeEntryRequest extends FormRequest
     {
         return [
             'date' => ['required', 'date'],
+            'team_id' => ['nullable', 'exists:teams,id'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i'],
             'purpose' => ['required', 'string', 'max:255'],
@@ -52,7 +54,7 @@ class StoreOfflineTimeEntryRequest extends FormRequest
      */
     protected function hasOverlappingEntry(): bool
     {
-        $userId = auth()->id();
+        $userId = Auth::id();
         $date = $this->input('date');
         $startTime = $this->input('start_time');
         $endTime = $this->input('end_time');

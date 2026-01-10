@@ -22,6 +22,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     Route::get('offline-time-summary', [\App\Http\Controllers\OfflineTimeEntryController::class, 'monthlySummary'])
         ->name('offline-time.summary');
+
+    Route::resource('teams', \App\Http\Controllers\TeamController::class);
+    Route::post('teams/{team}/members', [\App\Http\Controllers\TeamMemberController::class, 'store'])->name('teams.members.store');
+    Route::put('teams/{team}/members/{member}', [\App\Http\Controllers\TeamMemberController::class, 'update'])->name('teams.members.update');
+    Route::delete('teams/{team}/members/{member}', [\App\Http\Controllers\TeamMemberController::class, 'destroy'])->name('teams.members.destroy');
 });
 
 

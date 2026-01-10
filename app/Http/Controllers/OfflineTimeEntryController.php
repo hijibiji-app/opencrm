@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateOfflineTimeEntryRequest;
 use App\Models\OfflineTimeEntry;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -17,17 +18,33 @@ class OfflineTimeEntryController extends Controller
      */
     public function index(Request $request): Response
     {
-        $user = auth()->user();
-        $query = OfflineTimeEntry::with('user');
+        /** @var User $user */
+        $user = Auth::user();
+        $query = OfflineTimeEntry::with(['user', 'team']);
 
-        // If user is not admin, only show their own entries
+        // Teams where user can manage members (Owner or Admin)
+        $manageableTeamIds = \App\Models\Team::where('owner_id', $user->id)
+            ->orWhereHas('members', function($q) use ($user) {
+                $q->where('user_id', $user->id)->where('role', 'admin');
+            })->pluck('id')->toArray();
+
+        // Base restriction
         if (!$user->isAdmin()) {
-            $query->where('user_id', $user->id);
+            $query->where(function($q) use ($user, $manageableTeamIds) {
+                $q->where('user_id', $user->id)
+                  ->orWhereIn('team_id', $manageableTeamIds);
+            });
         }
 
         // Apply filters
-        if ($request->has('user_id') && $user->isAdmin()) {
+        if ($request->has('user_id') && ($user->isAdmin() || count($manageableTeamIds) > 0)) {
+            // For team admins, only allow filtering users if they are in a manageable team
+            // For simplicity, we just apply the user_id filter, the base restriction handles the rest
             $query->where('user_id', $request->user_id);
+        }
+
+        if ($request->has('team_id')) {
+            $query->where('team_id', $request->team_id);
         }
 
         if ($request->has('date_from')) {
@@ -39,26 +56,39 @@ class OfflineTimeEntryController extends Controller
         }
 
         if ($request->has('month')) {
-            $month = $request->month; // Format: YYYY-MM
+            $month = $request->month;
             [$year, $monthNum] = explode('-', $month);
             $query->whereYear('date', $year)->whereMonth('date', $monthNum);
         }
 
-        // Clone query to calculate total duration for the current filter
+        // Clone query to calculate total duration
         $totalDurationMinutes = $query->clone()->sum('duration_minutes');
 
         $entries = $query->orderBy('date', 'desc')
             ->orderBy('start_time', 'desc')
-            ->paginate(15);
+            ->paginate(15)
+            ->withQueryString();
 
-        // Get all users for admin filter dropdown
-        $users = $user->isAdmin() ? User::orderBy('name')->get(['id', 'name']) : [];
+        // Get users and teams for filters
+        $users = [];
+        if ($user->isAdmin()) {
+            $users = User::orderBy('name')->get(['id', 'name']);
+        } elseif (count($manageableTeamIds) > 0) {
+            $users = User::whereHas('teams', function($q) use ($manageableTeamIds) {
+                $q->whereIn('teams.id', $manageableTeamIds);
+            })->orWhere('id', $user->id)->distinct()->orderBy('name')->get(['id', 'name']);
+        }
+
+        $myTeams = $user->teams()->get(['teams.id', 'teams.name']);
+        $ownedTeams = $user->ownedTeams()->get(['id', 'name']);
+        $allUserTeams = $myTeams->merge($ownedTeams)->unique('id')->values();
 
         return Inertia::render('OfflineTime/Index', [
             'entries' => $entries,
             'users' => $users,
-            'filters' => $request->only(['user_id', 'date_from', 'date_to', 'month']),
-            'totalDuration' => $totalDurationMinutes,
+            'teams' => $allUserTeams,
+            'filters' => $request->only(['user_id', 'team_id', 'date_from', 'date_to', 'month']),
+            'totalDuration' => (int)$totalDurationMinutes,
         ]);
     }
 
@@ -67,7 +97,15 @@ class OfflineTimeEntryController extends Controller
      */
     public function create(): Response
     {
-        return Inertia::render('OfflineTime/Create');
+        /** @var User $user */
+        $user = Auth::user();
+        $myTeams = $user->teams()->get(['teams.id', 'teams.name']);
+        $ownedTeams = $user->ownedTeams()->get(['id', 'name']);
+        $allUserTeams = $myTeams->merge($ownedTeams)->unique('id')->values();
+
+        return Inertia::render('OfflineTime/Create', [
+            'teams' => $allUserTeams,
+        ]);
     }
 
     /**
@@ -84,7 +122,7 @@ class OfflineTimeEntryController extends Controller
         );
         
         // Add user_id
-        $validated['user_id'] = auth()->id();
+        $validated['user_id'] = Auth::id();
 
         $entry = OfflineTimeEntry::create($validated);
 
@@ -98,7 +136,9 @@ class OfflineTimeEntryController extends Controller
     public function show(OfflineTimeEntry $offlineTimeEntry): Response
     {
         // Authorization check
-        if (!auth()->user()->isAdmin() && $offlineTimeEntry->user_id !== auth()->id()) {
+        /** @var User $user */
+        $user = Auth::user();
+        if (!$user->isAdmin() && $offlineTimeEntry->user_id !== $user->id) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -114,13 +154,19 @@ class OfflineTimeEntryController extends Controller
      */
     public function edit(OfflineTimeEntry $offlineTimeEntry): Response
     {
-        // Authorization check
-        if (!auth()->user()->isAdmin() && $offlineTimeEntry->user_id !== auth()->id()) {
+        /** @var User $user */
+        $user = Auth::user();
+        if (!$user->isAdmin() && $offlineTimeEntry->user_id !== $user->id) {
             abort(403, 'Unauthorized action.');
         }
 
+        $myTeams = $user->teams()->get(['teams.id', 'teams.name']);
+        $ownedTeams = $user->ownedTeams()->get(['id', 'name']);
+        $allUserTeams = $myTeams->merge($ownedTeams)->unique('id')->values();
+
         return Inertia::render('OfflineTime/Edit', [
             'entry' => $offlineTimeEntry,
+            'teams' => $allUserTeams,
         ]);
     }
 
@@ -149,7 +195,9 @@ class OfflineTimeEntryController extends Controller
     public function destroy(OfflineTimeEntry $offlineTimeEntry)
     {
         // Authorization check
-        if (!auth()->user()->isAdmin() && $offlineTimeEntry->user_id !== auth()->id()) {
+        /** @var User $user */
+        $user = Auth::user();
+        if (!$user->isAdmin() && $offlineTimeEntry->user_id !== $user->id) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -164,7 +212,9 @@ class OfflineTimeEntryController extends Controller
      */
     public function report(Request $request): Response
     {
-        if (!auth()->user()->isAdmin()) {
+        /** @var User $user */
+        $user = Auth::user();
+        if (!$user->isAdmin()) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -182,17 +232,15 @@ class OfflineTimeEntryController extends Controller
      */
     public function monthlySummary(Request $request)
     {
-        $user = auth()->user();
+        /** @var User $user */
+        $user = Auth::user();
         $month = $request->input('month', now()->format('Y-m'));
 
         if ($user->isAdmin() && $request->has('user_id')) {
-            // Admin viewing specific user's summary
             $summary = $this->getUserMonthlySummary($request->user_id, $month);
         } elseif ($user->isAdmin()) {
-            // Admin viewing all users' summary
             $summary = $this->getAllUsersMonthlySummary($month);
         } else {
-            // Regular user viewing their own summary
             $summary = $this->getUserMonthlySummary($user->id, $month);
         }
 

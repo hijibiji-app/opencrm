@@ -61,9 +61,15 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
-    public function isUser(): bool
+    public function ownedTeams()
     {
-        return $this->role === 'user';
+        return $this->hasMany(Team::class, 'owner_id');
     }
 
+    public function teams()
+    {
+        return $this->belongsToMany(Team::class)
+            ->withPivot('role')
+            ->withTimestamps();
+    }
 }

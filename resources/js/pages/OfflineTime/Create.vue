@@ -15,13 +15,14 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Save, Clock, Calendar, FileText } from 'lucide-vue-next';
+import { ArrowLeft, Save, Clock, Calendar, FileText, Users } from 'lucide-vue-next';
 import InputError from '@/components/InputError.vue';
 import TimePickerInput from '@/components/TimePickerInput.vue';
 import DatePickerInput from '@/components/DatePickerInput.vue';
 
 interface OfflineTimeEntry {
 	id?: number;
+    team_id?: number;
 	date: string;
 	start_time: string;
 	end_time: string;
@@ -31,6 +32,7 @@ interface OfflineTimeEntry {
 
 interface Props {
 	entry?: OfflineTimeEntry;
+    teams?: Array<{ id: number, name: string }>;
 }
 
 const props = defineProps<Props>();
@@ -38,9 +40,10 @@ const props = defineProps<Props>();
 const isEditing = computed(() => !!props.entry);
 
 const form = useForm({
+    team_id: props.entry?.team_id?.toString() || '',
 	date: props.entry?.date || new Date().toISOString().split('T')[0],
-	start_time: props.entry?.start_time.substring(0, 5) || '', 
-	end_time: props.entry?.end_time.substring(0, 5) || '',
+	start_time: props.entry?.start_time?.substring(0, 5) || '', 
+	end_time: props.entry?.end_time?.substring(0, 5) || '',
 	purpose: props.entry?.purpose || '',
 	description: props.entry?.description || '',
 });
@@ -147,6 +150,29 @@ const breadcrumbs = [
 				</CardHeader>
 				<CardContent>
 					<form @submit.prevent="submit" class="space-y-6">
+                        <!-- Team -->
+						<div class="space-y-2">
+							<Label for="team" class="flex items-center gap-2">
+								<Users class="h-4 w-4" />
+								Team (Optional)
+							</Label>
+							<Select v-model="form.team_id">
+								<SelectTrigger id="team" :class="form.errors.team_id ? 'border-destructive' : ''">
+									<SelectValue placeholder="Personal / No Team" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="">Personal / No Team</SelectItem>
+									<SelectItem v-for="team in teams" :key="team.id" :value="team.id.toString()">
+										{{ team.name }}
+									</SelectItem>
+								</SelectContent>
+							</Select>
+							<InputError :message="form.errors.team_id" />
+							<p class="text-sm text-muted-foreground text-[11px]">
+								Optionally associate this time with a team
+							</p>
+						</div>
+
 						<!-- Date -->
 						<div class="space-y-2">
 							<Label for="date" class="flex items-center gap-2">

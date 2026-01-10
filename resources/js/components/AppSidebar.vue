@@ -33,6 +33,11 @@ const mainNavItems = computed<NavItem[]>(() => {
             href: '/offline-time',
             icon: Clock,
         },
+        {
+            title: 'Teams',
+            href: '/teams',
+            icon: Users,
+        }
     ];
     return items;
 });

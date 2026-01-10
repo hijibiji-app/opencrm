@@ -51,6 +51,7 @@ interface OfflineTimeEntry {
 	purpose: string;
 	description?: string;
 	user?: User;
+    team?: { id: number; name: string };
 	created_at?: string;
 	updated_at?: string;
 }
@@ -67,8 +68,10 @@ interface PaginatedEntries {
 interface Props {
 	entries: PaginatedEntries;
 	users: User[];
+	teams: Array<{ id: number, name: string }>;
 	filters: {
 		user_id?: number;
+		team_id?: number;
 		date_from?: string;
 		date_to?: string;
 		month?: string;
@@ -84,6 +87,7 @@ const isAdmin = computed(() => currentUser.value?.role === 'admin');
 
 // Filter state
 const filterUserId = ref(props.filters.user_id?.toString() || '');
+const filterTeamId = ref(props.filters.team_id?.toString() || '');
 const filterDateFrom = ref(props.filters.date_from || '');
 const filterDateTo = ref(props.filters.date_to || '');
 const filterMonth = ref(props.filters.month || '');
@@ -131,6 +135,7 @@ const applyFilters = () => {
 		'/offline-time',
 		{
 			user_id: filterUserId.value || undefined,
+			team_id: filterTeamId.value || undefined,
 			date_from: filterDateFrom.value || undefined,
 			date_to: filterDateTo.value || undefined,
 			month: filterMonth.value || undefined,
@@ -144,6 +149,7 @@ const applyFilters = () => {
 
 const clearFilters = () => {
 	filterUserId.value = '';
+	filterTeamId.value = '';
 	filterDateFrom.value = '';
 	filterDateTo.value = '';
 	filterMonth.value = '';
@@ -198,7 +204,7 @@ const breadcrumbs = [
 				<div>
 					<h1 class="text-lg font-semibold tracking-tight">Offline Time Tracking</h1>
 					<p class="text-sm text-muted-foreground">
-						{{ isAdmin ? 'Manage all offline time entries' : 'Track your offline working hours' }}
+                        Track and manage your offline working hours.
 					</p>
 				</div>
 				<div class="flex gap-2">
@@ -226,28 +232,28 @@ const breadcrumbs = [
 
 			<!-- Summary Card -->
 			<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
-				<Card class="shadow-none p-2">
+				<Card class="shadow-none p-2 border-slate-200">
 					<CardContent class="p-0 flex items-center gap-3">
-						<div class="p-2 bg-gray-100 rounded-lg">
-							<Clock class="h-5 w-5 text-black" />
+						<div class="p-2 bg-slate-100 rounded-lg">
+							<Clock class="h-5 w-5 text-slate-700" />
 						</div>
 						<div>
-							<p class="text-xs font-medium text-black uppercase tracking-wider">Total Duration</p>
-							<p class="text-xl font-bold text-black leading-none mt-1">
+							<p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Duration</p>
+							<p class="text-lg font-bold text-slate-900 leading-none mt-1">
 								{{ formatDuration(totalDuration) }}
 							</p>
 						</div>
 					</CardContent>
 				</Card>
 
-				<Card class="shadow-none p-2">
+				<Card class="shadow-none p-2 border-slate-200">
 					<CardContent class="p-0 flex items-center gap-3">
 						<div class="p-2 bg-slate-100 rounded-lg">
-							<FileText class="h-5 w-5 text-black" />
+							<FileText class="h-5 w-5 text-slate-700" />
 						</div>
 						<div>
-							<p class="text-xs font-medium text-black uppercase tracking-wider">Total Entries</p>
-							<p class="text-xl font-bold text-black leading-none mt-1">
+							<p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Entries</p>
+							<p class="text-lg font-bold text-slate-900 leading-none mt-1">
 								{{ entries.total }}
 							</p>
 						</div>
@@ -256,18 +262,46 @@ const breadcrumbs = [
 			</div>
 
 			<!-- Filters Card -->
-			<Card class="border-none shadow-none py-4">
+			<Card class="border-none shadow-none py-6 border-b">
 				<CardContent class="p-0">
-					<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
-						<!-- User Filter (Admin Only) - Currently commented out in original -->
-						
+					<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+						<div v-if="users.length > 0" class="space-y-1.5 text-sm">
+							<Label for="filter-user">User</Label>
+							<Select v-model="filterUserId">
+								<SelectTrigger class="h-9">
+									<SelectValue placeholder="All Users" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="">All Users</SelectItem>
+									<SelectItem v-for="u in users" :key="u.id" :value="u.id.toString()">
+										{{ u.name }}
+									</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+
 						<div class="space-y-1.5 text-sm">
-							<Label for="filter-date-from">From Date</Label>
+							<Label for="filter-team">Team</Label>
+							<Select v-model="filterTeamId">
+								<SelectTrigger class="h-9">
+									<SelectValue placeholder="All/Personal" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="">All/Personal</SelectItem>
+									<SelectItem v-for="t in teams" :key="t.id" :value="t.id.toString()">
+										{{ t.name }}
+									</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+
+						<div class="space-y-1.5 text-sm">
+							<Label for="filter-date-from">From</Label>
 							<DatePickerInput id="filter-date-from" v-model="filterDateFrom" />
 						</div>
 
 						<div class="space-y-1.5 text-sm">
-							<Label for="filter-date-to">To Date</Label>
+							<Label for="filter-date-to">To</Label>
 							<DatePickerInput id="filter-date-to" v-model="filterDateTo" />
 						</div>
 
@@ -277,13 +311,12 @@ const breadcrumbs = [
 						</div>
 
 						<div class="flex items-end gap-2">
-							<Button size="sm" @click="applyFilters" class="flex-1">
+							<Button size="sm" @click="applyFilters" class="flex-1 h-9">
 								<Search class="mr-1.5 h-3.5 w-3.5" />
 								Search
 							</Button>
-							<Button size="sm" variant="outline" @click="clearFilters">
+							<Button size="sm" variant="outline" @click="clearFilters" class="h-9">
 								<RotateCcw class="mr-1.5 h-3.5 w-3.5" />
-								Reset
 							</Button>
 						</div>
 					</div>
@@ -299,63 +332,52 @@ const breadcrumbs = [
 						<Table>
 							<TableHeader class="bg-muted">
 								<TableRow>
-									<TableHead v-if="isAdmin" class="text-xs font-semibold uppercase py-3">User</TableHead>
-									<TableHead class="text-xs font-semibold uppercase py-3">Date</TableHead>
-									<TableHead class="text-xs font-semibold uppercase py-3">Time Range</TableHead>
-									<TableHead class="text-xs font-semibold uppercase py-3">Duration</TableHead>
-									<TableHead class="text-xs font-semibold uppercase py-3">Purpose</TableHead>
-									<TableHead class="text-xs font-semibold uppercase py-3 max-w-[200px]">Description</TableHead>
-									<TableHead class="text-xs font-semibold uppercase py-3 text-right">Actions</TableHead>
+									<TableHead class="text-[10px] font-bold uppercase py-3">Date/Time</TableHead>
+									<TableHead class="text-[10px] font-bold uppercase py-3">User</TableHead>
+                                    <TableHead class="text-[10px] font-bold uppercase py-3">Team</TableHead>
+									<TableHead class="text-[10px] font-bold uppercase py-3">Duration</TableHead>
+									<TableHead class="text-[10px] font-bold uppercase py-3">Purpose</TableHead>
+									<TableHead class="text-[10px] font-bold uppercase py-3 text-right">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
 								<TableRow v-if="entries.data.length === 0">
-									<TableCell :colspan="isAdmin ? 7 : 6" class="text-center py-12">
+									<TableCell colspan="6" class="text-center py-12">
 										<div class="flex flex-col items-center justify-center text-muted-foreground">
-											<Calendar class="h-12 w-12 mb-4 opacity-20" />
+											<Calendar class="h-12 w-12 mb-4 opacity-10" />
 											<p class="text-lg font-medium">No time entries found</p>
 											<p class="text-sm mt-2">
-												{{ filters.user_id || filters.date_from || filters.date_to || filters.month
+												{{ filters.user_id || filters.team_id || filters.date_from || filters.date_to || filters.month
 													? 'Try adjusting your filters'
 													: 'Start by adding your first offline time entry' }}
 											</p>
 										</div>
 									</TableCell>
 								</TableRow>
-								<TableRow v-for="entry in entries.data" :key="entry.id" class="hover:bg-muted/50 border-b last:border-0">
-									<TableCell v-if="isAdmin" class="font-medium text-sm py-3">
+								<TableRow v-for="entry in entries.data" :key="entry.id" class="hover:bg-muted/30 border-b last:border-0 transition-colors">
+                                    <TableCell class="py-3 text-xs">
+										<div class="font-medium text-slate-900">{{ formatDate(entry.date) }}</div>
+                                        <div class="text-[10px] text-slate-500">{{ formatTime(entry.start_time) }} - {{ formatTime(entry.end_time) }}</div>
+									</TableCell>
+									<TableCell class="py-3 text-xs font-medium text-slate-700">
 										{{ entry.user?.name || 'Unknown' }}
 									</TableCell>
-									<TableCell class="py-3 text-sm">
-										<div class="flex items-center gap-1.5">
-											<Calendar class="h-3.5 w-3.5 text-muted-foreground" />
-											{{ formatDate(entry.date) }}
-										</div>
-									</TableCell>
-									<TableCell class="py-3 text-sm">
-										<div class="flex items-center gap-1.5">
-											<Clock class="h-3.5 w-3.5 text-muted-foreground" />
-											{{ formatTime(entry.start_time) }} - {{ formatTime(entry.end_time) }}
-										</div>
+                                    <TableCell class="py-3 text-xs font-medium text-slate-500">
+										{{ (entry as any).team?.name || 'Personal' }}
 									</TableCell>
 									<TableCell class="py-3">
-										<Badge variant="secondary" class="font-mono text-[11px] h-5 px-1.5">
+										<Badge variant="secondary" class="font-mono text-[10px] h-5 px-1.5 bg-slate-100 text-slate-700">
 											{{ formatDuration(entry.duration_minutes) }}
 										</Badge>
 									</TableCell>
 									<TableCell class="py-3">
-										<Badge :variant="getPurposeBadgeVariant(entry.purpose)" class="text-[11px] h-5 px-1.5">
+										<Badge :variant="getPurposeBadgeVariant(entry.purpose)" class="text-[10px] h-5 px-1.5">
 											{{ entry.purpose }}
 										</Badge>
 									</TableCell>
-									<TableCell class="py-3 max-w-[200px]">
-										<p class="text-xs text-muted-foreground truncate" :title="entry.description || 'N/A'">
-											{{ entry.description || 'N/A' }}
-										</p>
-									</TableCell>
 									<TableCell class="py-3 text-right">
 										<div class="flex items-center justify-end gap-1">
-											<Link :href="`/offline-time/${entry.id}/edit`">
+											<Link :href="'/offline-time/' + entry.id + '/edit'">
 												<Button variant="ghost" size="icon" class="h-8 w-8 hover:bg-slate-100">
 													<Edit2 class="h-3.5 w-3.5 text-slate-600" />
 												</Button>

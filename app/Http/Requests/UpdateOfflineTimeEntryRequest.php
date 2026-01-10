@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\OfflineTimeEntry;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Validator;
 
 class UpdateOfflineTimeEntryRequest extends FormRequest
@@ -16,7 +17,9 @@ class UpdateOfflineTimeEntryRequest extends FormRequest
         $entry = $this->route('offline_time_entry');
         
         // User can only update their own entries, admin can update any
-        return auth()->user()->isAdmin() || $entry->user_id === auth()->id();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        return $user->isAdmin() || $entry->user_id === $user->id;
     }
 
     /**
@@ -28,6 +31,7 @@ class UpdateOfflineTimeEntryRequest extends FormRequest
     {
         return [
             'date' => ['required', 'date'],
+            'team_id' => ['nullable', 'exists:teams,id'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i'],
             'purpose' => ['required', 'string', 'max:255'],
