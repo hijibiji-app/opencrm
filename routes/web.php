@@ -25,6 +25,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('teams', \App\Http\Controllers\TeamController::class);
     Route::resource('users', \App\Http\Controllers\UserController::class);
+    Route::get('projects/domains', [\App\Http\Controllers\ProjectController::class, 'domainList'])->name('projects.domains');
+    Route::resource('projects', \App\Http\Controllers\ProjectController::class);
+    Route::resource('reels', \App\Http\Controllers\ReelController::class);
+    Route::get('add', [\App\Http\Controllers\ReelController::class, 'create'])->name('reels.add');
     Route::post('teams/{team}/members', [\App\Http\Controllers\TeamMemberController::class, 'store'])->name('teams.members.store');
     Route::put('teams/{team}/members/{member}', [\App\Http\Controllers\TeamMemberController::class, 'update'])->name('teams.members.update');
     Route::delete('teams/{team}/members/{member}', [\App\Http\Controllers\TeamMemberController::class, 'destroy'])->name('teams.members.destroy');

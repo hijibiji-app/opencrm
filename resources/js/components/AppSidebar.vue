@@ -33,6 +33,11 @@ const mainNavItems = computed<NavItem[]>(() => {
             href: '/offline-time',
             icon: Clock,
         },
+        {
+            title: 'Projects',
+            href: '/projects',
+            icon: Folder,
+        },
     ];
 
     if (user.value?.role === 'admin') {
