@@ -2,11 +2,18 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
 import { AlertTriangle, Clock, RefreshCw, Target } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 
 const props = defineProps<{
     offlineMinutes: number;
+    monthFormatted: string;
+    adminStats?: {
+        total_users?: number;
+        active_users_today?: number;
+    };
+    isAdmin?: boolean;
 }>();
 
 // State
@@ -85,7 +92,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <Card class="col-span-full">
+    <Card>
         <CardHeader class="pb-2">
             <div class="flex items-center justify-between">
                 <CardTitle class="flex items-center gap-2 text-base">
@@ -141,7 +148,7 @@ onMounted(() => {
 
                 <!-- Total -->
                 <div class="rounded-lg border bg-primary/5 p-3 text-center">
-                    <p class="text-xs text-muted-foreground">Total</p>
+                    <p class="text-xs text-muted-foreground">Total Today</p>
                     <p class="text-lg font-semibold text-primary">
                         {{ formatTime(totalMinutes) }}
                     </p>
@@ -149,7 +156,7 @@ onMounted(() => {
 
                 <!-- Target -->
                 <div class="rounded-lg border p-3 text-center">
-                    <p class="text-xs text-muted-foreground">Target</p>
+                    <p class="text-xs text-muted-foreground">Daily Target</p>
                     <p class="text-lg font-semibold">8h</p>
                 </div>
             </div>
@@ -176,6 +183,73 @@ onMounted(() => {
                     to track online time.</span
                 >
             </div>
+
+            <!-- General Stats Divider -->
+            <!-- Only show if we have data to show (always true for This Month) -->
+            <template v-if="monthFormatted || (isAdmin && adminStats)">
+                <Separator class="my-4" />
+
+                <!-- Global Stats Section (Styled like top grid) -->
+                <!-- Admin: 4 cards in 1 row. User: 2 cards in 1 row (on larger screens) -->
+                <div
+                    class="grid gap-2"
+                    :class="[
+                        isAdmin && adminStats
+                            ? 'grid-cols-2 sm:grid-cols-4'
+                            : 'grid-cols-2',
+                    ]"
+                >
+                    <!-- Card 1: Logged Today (For everyone) -->
+                    <div class="rounded-lg border bg-primary/5 p-3 text-center">
+                        <p class="text-xs text-muted-foreground">
+                            Logged Today
+                        </p>
+                        <div class="flex items-center justify-center gap-2">
+                            <p class="text-lg font-semibold text-primary">
+                                {{ formatTime(totalMinutes) }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: This Month (For everyone) -->
+                    <div class="rounded-lg border p-3 text-center">
+                        <p class="text-xs text-muted-foreground">This Month</p>
+                        <div class="flex items-center justify-center gap-2">
+                            <p class="text-lg font-semibold">
+                                {{ monthFormatted }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Active Today (Admin Only) -->
+                    <div
+                        v-if="isAdmin && adminStats"
+                        class="rounded-lg border p-3 text-center"
+                    >
+                        <p class="text-xs text-muted-foreground">
+                            Active Users
+                        </p>
+                        <div class="flex items-center justify-center gap-2">
+                            <p class="text-lg font-semibold">
+                                {{ adminStats.active_users_today }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Total Users (Admin Only) -->
+                    <div
+                        v-if="isAdmin && adminStats"
+                        class="rounded-lg border p-3 text-center"
+                    >
+                        <p class="text-xs text-muted-foreground">Total Users</p>
+                        <div class="flex items-center justify-center gap-2">
+                            <p class="text-lg font-semibold">
+                                {{ adminStats.total_users }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </template>
         </CardContent>
     </Card>
 </template>
