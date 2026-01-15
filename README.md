@@ -22,8 +22,8 @@ Ensure you have the following installed:
 
 ### 1. Clone the repository
 ```bash
-git clone <repository-url>
-cd <project-folder>
+git clone https://github.com/hijibiji-app/opencrm.git
+cd opencrm
 ```
 
 ### 2. Install PHP Dependencies
