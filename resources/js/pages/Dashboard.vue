@@ -1,23 +1,11 @@
 <script setup lang="ts">
 import DailyGoalWidget from '@/components/DailyGoalWidget.vue';
+import MonthlyPaceWidget from '@/components/MonthlyPaceWidget.vue';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
-import {
-    ArrowRight,
-    Calendar,
-    Clock,
-    Plus,
-    TrendingUp,
-    Users as UsersIcon,
-} from 'lucide-vue-next';
+import { ArrowRight, Clock, Plus, TrendingUp } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 interface TimeEntry {
@@ -53,6 +41,20 @@ const props = defineProps<{
         active_users_today?: number;
     };
     isAdmin: boolean;
+    monthlyPace: {
+        monthly_target_minutes: number;
+        monthly_target_formatted: string;
+        total_worked_minutes: number;
+        total_worked_formatted: string;
+        remaining_minutes: number;
+        remaining_formatted: string;
+        remaining_working_days: number;
+        total_working_days: number;
+        required_daily_minutes: number;
+        required_daily_formatted: string;
+        status: 'on_track' | 'behind' | 'missed' | 'completed';
+        ssm_configured: boolean;
+    };
 }>();
 
 const formatTime = (time: string) => {
@@ -110,13 +112,13 @@ const breadcrumbs = [
     <Head title="Dashboard" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="container mx-auto space-y-4 p-4">
+        <div class="container mx-auto space-y-6 p-4">
             <!-- Header -->
             <div
                 class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center"
             >
                 <div>
-                    <h1 class="text-lg font-semibold tracking-tight">
+                    <h1 class="text-xl font-semibold tracking-tight">
                         Dashboard
                     </h1>
                     <p class="text-sm text-muted-foreground">
@@ -131,111 +133,29 @@ const breadcrumbs = [
                 </Link>
             </div>
 
-            <!-- Daily Goal Widget -->
-            <DailyGoalWidget
-                :offline-minutes="Number(stats.today_minutes || 0)"
-            />
+            <!-- Main Content Area: Compact Single Row for Trackers -->
+            <div class="grid gap-6 md:grid-cols-2">
+                <!-- Daily Goal Widget (Includes Stats Overview via Partition) -->
+                <DailyGoalWidget
+                    :offline-minutes="Number(stats.today_minutes || 0)"
+                    :month-formatted="stats.month_formatted"
+                    :admin-stats="adminStats"
+                    :is-admin="isAdmin"
+                />
 
-            <!-- Stats Overview -->
-            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <!-- Today's Time -->
-                <Card>
-                    <CardContent>
-                        <div class="flex items-center justify-between gap-2">
-                            <CardTitle class="text-sm font-medium"
-                                >Logged Today</CardTitle
-                            >
-                            <Clock class="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div class="text-xl font-bold">
-                            {{ stats.today_formatted }}
-                        </div>
-                        <p class="text-xs text-muted-foreground">
-                            Offline work duration today
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <!-- Month's Time -->
-                <Card>
-                    <CardContent>
-                        <div class="flex items-center justify-between gap-2">
-                            <CardTitle class="text-sm font-medium"
-                                >This Month</CardTitle
-                            >
-                            <Calendar class="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div class="text-xl font-bold">
-                            {{ stats.month_formatted }}
-                        </div>
-                        <p class="text-xs text-muted-foreground">
-                            Total offline duration for
-                            {{
-                                new Date().toLocaleString('default', {
-                                    month: 'long',
-                                })
-                            }}
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <!-- Admin Stats if applicable -->
-                <template v-if="isAdmin">
-                    <Card>
-                        <CardContent>
-                            <div
-                                class="flex items-center justify-between gap-2"
-                            >
-                                <CardTitle class="text-sm font-medium"
-                                    >Active Users (Today)</CardTitle
-                                >
-                                <UsersIcon
-                                    class="h-4 w-4 text-muted-foreground"
-                                />
-                            </div>
-                            <div class="text-2xl font-bold">
-                                {{ adminStats.active_users_today }}
-                            </div>
-                            <p class="text-xs text-muted-foreground">
-                                Users who logged time today
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent>
-                            <div
-                                class="flex items-center justify-between gap-2"
-                            >
-                                <CardTitle class="text-sm font-medium"
-                                    >Total Users</CardTitle
-                                >
-                                <UsersIcon
-                                    class="h-4 w-4 text-muted-foreground"
-                                />
-                            </div>
-                            <div class="text-2xl font-bold">
-                                {{ adminStats.total_users }}
-                            </div>
-                            <p class="text-xs text-muted-foreground">
-                                Registered employees
-                            </p>
-                        </CardContent>
-                    </Card>
-                </template>
+                <!-- Monthly Pace Widget -->
+                <MonthlyPaceWidget :pace="monthlyPace" />
             </div>
 
-            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <!-- Weekly Activity Chart -->
-                <Card class="col-span-4">
+            <!-- Bottom Row: Charts & Recent (2/3 & 1/3) -->
+            <div class="grid gap-6 lg:grid-cols-3">
+                <!-- Weekly Activity Chart (Spans 2 columns) -->
+                <Card class="shadow-sm lg:col-span-2">
                     <CardHeader>
-                        <CardTitle class="flex items-center gap-2">
+                        <CardTitle class="flex items-center gap-2 text-base">
                             <TrendingUp class="h-5 w-5 text-primary" />
                             Activity (Last 7 Days)
                         </CardTitle>
-                        <CardDescription
-                            >Daily offline work hours</CardDescription
-                        >
                     </CardHeader>
                     <CardContent class="pl-2">
                         <div
@@ -270,12 +190,12 @@ const breadcrumbs = [
                     </CardContent>
                 </Card>
 
-                <!-- Recent Activity List -->
-                <Card class="col-span-3">
+                <!-- Recent Activity List (Spans 1 column) -->
+                <Card class="shadow-sm">
                     <CardHeader
-                        class="flex flex-row items-center justify-between"
+                        class="flex flex-row items-center justify-between pb-2"
                     >
-                        <CardTitle>Recent Entries</CardTitle>
+                        <CardTitle class="text-base">Recent Entries</CardTitle>
                         <Link
                             href="/offline-time"
                             class="flex items-center text-sm text-primary hover:underline"
@@ -284,7 +204,7 @@ const breadcrumbs = [
                         </Link>
                     </CardHeader>
                     <CardContent>
-                        <div v-if="recentEntries.length > 0" class="space-y-2">
+                        <div v-if="recentEntries.length > 0" class="space-y-3">
                             <div
                                 v-for="entry in recentEntries"
                                 :key="entry.id"
