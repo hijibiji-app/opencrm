@@ -18,11 +18,12 @@ const props = defineProps<{
     hasError?: boolean;
 }>();
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:modelValue', 'hour-complete']);
 
 const hour = ref('');
 const minute = ref('');
 const period = ref<string>('AM');
+const minuteInputRef = ref<HTMLInputElement | null>(null);
 
 const getInputClass = () => {
     return props.hasError
@@ -103,6 +104,15 @@ const validateHour = (e: Event | string) => {
     }
 
     val = val.replace(/\D/g, ''); // Numeric only
+
+    // Auto-focus to minute field when 2 digits are typed
+    if (val.length === 2) {
+        emit('hour-complete');
+        // Focus minute input after a short delay to allow DOM update
+        setTimeout(() => {
+            (minuteInputRef.value?.$el as HTMLInputElement)?.focus();
+        }, 10);
+    }
 
     if (val.length > 2) val = val.slice(0, 2);
 
@@ -264,6 +274,7 @@ const quickTimeModel = computed({
                     >Minutes</Label
                 >
                 <Input
+                    ref="minuteInputRef"
                     v-model="minute"
                     type="text"
                     inputmode="numeric"
