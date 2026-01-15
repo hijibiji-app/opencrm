@@ -6,3 +6,7 @@ php artisan db:seed
 
 npm run dev
 php artisan serve
+
+
+#Git
+git checkout -b rezvi
