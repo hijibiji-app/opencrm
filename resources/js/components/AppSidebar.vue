@@ -14,7 +14,7 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Users, Package, FileText, Receipt, Clock } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Users, Package, FileText, Receipt, Clock, BarChart3 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 import { computed } from 'vue';
 
@@ -27,6 +27,11 @@ const mainNavItems = computed<NavItem[]>(() => {
             title: 'Dashboard',
             href: dashboard(),
             icon: LayoutGrid,
+        },
+        {
+            title: 'Analytics',
+            href: '/analytics',
+            icon: BarChart3,
         },
         {
             title: 'Offline Time',

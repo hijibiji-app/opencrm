@@ -23,6 +23,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('offline-time-summary', [\App\Http\Controllers\OfflineTimeEntryController::class, 'monthlySummary'])
         ->name('offline-time.summary');
 
+    Route::get('analytics', [\App\Http\Controllers\AnalyticsController::class, 'index'])
+        ->name('analytics');
+
     Route::resource('teams', \App\Http\Controllers\TeamController::class);
     Route::resource('users', \App\Http\Controllers\UserController::class);
     Route::get('projects/domains', [\App\Http\Controllers\ProjectController::class, 'domainList'])->name('projects.domains');
