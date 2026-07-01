@@ -23,7 +23,7 @@ const emit = defineEmits(['update:modelValue', 'hour-complete']);
 const hour = ref('');
 const minute = ref('');
 const period = ref<string>('AM');
-const minuteInputRef = ref<HTMLInputElement | null>(null);
+const minuteInputRef = ref<any>(null);
 
 const getInputClass = () => {
     return props.hasError
