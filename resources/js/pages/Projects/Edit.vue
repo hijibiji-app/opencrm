@@ -194,7 +194,7 @@ const statuses = ['active', 'inactive', 'maintenance'];
                         <div class="pt-4 border-t">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
                                 <div>
-                                    <span class="font-medium">Created by:</span> {{ project.user.name }}
+                                    <span class="font-medium">Created by:</span> {{ project?.user?.name }}
                                 </div>
                                 <div>
                                     <span class="font-medium">Created at:</span> {{ new Date(project.created_at).toLocaleDateString() }}
